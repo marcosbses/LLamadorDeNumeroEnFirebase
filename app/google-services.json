@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "478636075137",
+    "firebase_url": "https://llamadordenumeroenfirebase.firebaseio.com",
+    "project_id": "llamadordenumeroenfirebase",
+    "storage_bucket": "llamadordenumeroenfirebase.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:478636075137:android:37472df4a0287b16",
+        "android_client_info": {
+          "package_name": "com.example.marcos.llamadordenumeroenfirebase"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "478636075137-9skrceuvb4lips2hoj4stqsinagivae3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.marcos.llamadordenumeroenfirebase",
+            "certificate_hash": "3732c514df34056dcb4bb9da95d428c531da6785"
+          }
+        },
+        {
+          "client_id": "478636075137-0vqivmudod927p3odj8475292falnt03.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBfPB9Xr34NnLWfgyFmq7m2nzDr0fZTnyY"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "478636075137-0vqivmudod927p3odj8475292falnt03.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
