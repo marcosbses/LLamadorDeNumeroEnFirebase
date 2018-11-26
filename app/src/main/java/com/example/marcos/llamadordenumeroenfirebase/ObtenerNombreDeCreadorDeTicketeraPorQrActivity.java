@@ -24,7 +24,7 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import java.io.IOException;
 
-public class ObtenerNombreDeCreadorDeTicketeraPorQrActivity extends AppCompatActivity implements SurfaceHolder.Callback, Ticketeras.Callback {
+public class ObtenerNombreDeCreadorDeTicketeraPorQrActivity extends AppCompatActivity implements SurfaceHolder.Callback {
 
 
 
@@ -66,9 +66,8 @@ public class ObtenerNombreDeCreadorDeTicketeraPorQrActivity extends AppCompatAct
                     Toast.makeText(context,barcode.displayValue,Toast.LENGTH_LONG).show();
 
                     try {
-                        codigoPublico=TraductorCodigoPublicoPrivado.traducirCodigoDePrivadoAPublico(barcode.displayValue);
-                        Log.i("infor","codigo traducido a codigo publico: "+codigoPublico);
-                        obtenerNombreDeCreadorDeTicketeraPorQrActivity.encontrarTicketeraPorCodigoPublico();
+
+                        obtenerNombreDeCreadorDeTicketeraPorQrActivity.nombreDeCreadorEncontrado(barcode.displayValue);
                     } catch (Exception e) {
                         Log.i("infor","exceptcion de traduccion de codigos");
                         Toast.makeText(context,"No se reconoce codigo",Toast.LENGTH_LONG);
@@ -134,33 +133,9 @@ public class ObtenerNombreDeCreadorDeTicketeraPorQrActivity extends AppCompatAct
 
     }
 
-    private void encontrarTicketeraPorCodigoPublico(){
-        Log.i("infor","encontrar ticketera por codigo publico");
-        new Ticketeras(FirebaseDatabase.getInstance().getReference(),this).buscarTodasLasTicketeras();
-
-    }
-
-    @Override
-    public void ticketerasEncontradas(Ticketera[] ticketeras) {
-        Ticketera ticketeraConCodigoPublico=null;
-        Log.i("infor","codigo publico mapeado: "+codigoPublico);//muestra la traduccion que se hizo del codigo privado escaneado al codigo publico
-        for(Ticketera ticketera:ticketeras){
-            Log.i("infor","codigo de ticketera: "+ticketera.getId());
-            if(ticketera.getId().equals(codigoPublico)){
-                ticketeraConCodigoPublico=ticketera;
-            }
-        }
 
 
-        Intent data=getIntent();
-        try {
-            data.putExtra("NOMBRE_CREADOR", ticketeraConCodigoPublico.getCreador());
-        }catch(NullPointerException e){
-            data.putExtra("NOMBRE_CREADOR","Codigo no reconocido");
-        }
-        setResult(RESULT_OK,data);
-        finish();
-    }
+
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
@@ -177,6 +152,13 @@ public class ObtenerNombreDeCreadorDeTicketeraPorQrActivity extends AppCompatAct
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
 
+    }
+
+    private void nombreDeCreadorEncontrado(String nombreCreador){
+        Intent data=new Intent();
+        data.putExtra("NOMBRE_CREADOR",nombreCreador);
+        setResult(RESULT_OK,data);
+        finish();
     }
 
     @Override

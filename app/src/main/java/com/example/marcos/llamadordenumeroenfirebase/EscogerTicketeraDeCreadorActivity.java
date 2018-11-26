@@ -13,13 +13,16 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 public class EscogerTicketeraDeCreadorActivity extends AppCompatActivity implements Ticketeras.Callback {
 
     private String creador;
+    private boolean soyAdmin;
     private DatabaseReference databaseReference;
 
     @Override
@@ -30,18 +33,29 @@ public class EscogerTicketeraDeCreadorActivity extends AppCompatActivity impleme
         TextView textView=new TextView(this);
         textView.setText("Hola desde actividad escoger ticketeras");
         ((ViewGroup)findViewById(R.id.root_layout)).addView(textView);
-        String creador=this.getIntent().getExtras().getString("EXTRA_CREADOR");
-        Log.i("infor","lo tenemos a "+creador);
-        this.creador=creador;
+
+        this.creador=MisPreferenciasCompartidas.getIdDeAdministradorCreadorDeTicketeras(this);
+        Toast.makeText(this,"Creador: "+creador,Toast.LENGTH_LONG).show();
+        this.soyAdmin=MisPreferenciasCompartidas.getSoyAdmin(this);
+
         this.databaseReference= FirebaseDatabase.getInstance().getReference();
-        new Ticketeras(databaseReference,this).buscarTicketerasDeCreador(creador);
+        if(soyAdmin){
+            new Ticketeras(databaseReference,this).buscarTicketerasDeCreador(FirebaseAuth.getInstance().getCurrentUser().getUid());
+        }else{
+            new Ticketeras(databaseReference,this).buscarTicketerasDeCreador(creador);
+        }
+
 
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.usuario_comun_menu, menu);
+        if(MisPreferenciasCompartidas.getSoyAdmin(this)){
+            inflater.inflate(R.menu.admin_menu, menu);
+        }else {
+            inflater.inflate(R.menu.usuario_comun_menu, menu);
+        }
         return true;
     }
 
@@ -53,7 +67,10 @@ public class EscogerTicketeraDeCreadorActivity extends AppCompatActivity impleme
                 obtenerNombreDeCreadorPorEscaneoDeQr();
                 return true;
             case R.id.h_a:
-
+                hacerseAdministrador();
+                return true;
+            case R.id.c_c:
+                compartirControles();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -72,6 +89,16 @@ public class EscogerTicketeraDeCreadorActivity extends AppCompatActivity impleme
             }
         };
         return onClickListener;
+    }
+
+    private void hacerseAdministrador(){
+        MisPreferenciasCompartidas.setSoyAdmin(this,true);
+        recreate();
+    }
+
+    private void compartirControles(){
+        Intent intent=new Intent(this,CompartirControlesActivity.class);
+        startActivity(intent);
     }
 
 
@@ -100,12 +127,12 @@ public class EscogerTicketeraDeCreadorActivity extends AppCompatActivity impleme
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         Log.i("infor","on activity result");
-        Log.i("infor","nombre de creador: "+data.getExtras().getString("NOMBRE_CREADOR"));
+        //Log.i("infor","nombre de creador: "+data.getExtras().getString("NOMBRE_CREADOR"));
         if (requestCode == 22) {
             if (resultCode == RESULT_OK) {
                 Log.i("infor","guardar  preferencias");
                 if(!data.getExtras().getString("NOMBRE_CREADOR").equals("Codigo no reconocido")){
-                    getSharedPreferences("preferencias_generales", Context.MODE_PRIVATE).edit().putString("creador_de_ticketeras",data.getExtras().getString("NOMBRE_CREADOR")).apply();
+                    MisPreferenciasCompartidas.setIdDeAdministradorCreadorDeTicketeras(this,data.getExtras().getString("NOMBRE_CREADOR"));
                     this.creador=data.getExtras().getString("NOMBRE_CREADOR");
                     new Ticketeras(databaseReference,this).buscarTicketerasDeCreador(creador);
                 }

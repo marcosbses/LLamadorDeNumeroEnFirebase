@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.support.v4.content.FileProvider;
 import android.util.Log;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 
 import net.glxn.qrgen.android.QRCode;
@@ -18,7 +19,6 @@ public class PublicadorDeNuevaTicketera implements UltimoIdentificadorDeTicketer
     private DatabaseReference databaseReference;
     private String ultimoNumeroDeTicketera;
     private String ultimoIdentificadorDeTicketera;
-    private boolean codigoPrivadoParaCompartir=false;
 
     public PublicadorDeNuevaTicketera(Context context,DatabaseReference databaseReference){
         this.databaseReference=databaseReference;
@@ -31,11 +31,6 @@ public class PublicadorDeNuevaTicketera implements UltimoIdentificadorDeTicketer
         new UltimoIdentificadorDeTicketera(databaseReference).encontrarUltimoIdentificador(this);
     }
 
-    public void publicarConCodigoPrivadoParaCompartir(){
-        this.codigoPrivadoParaCompartir=true;
-        new UltimoNumeroDeTicketera(databaseReference).encontrarUltimoNumeroDeTicketera(this);
-        new UltimoIdentificadorDeTicketera(databaseReference).encontrarUltimoIdentificador(this);
-    }
 
     @Override
     public void onUlimoIdentificadorDeTicketeraEncontrado(String ultimoIdentificador) {
@@ -43,7 +38,7 @@ public class PublicadorDeNuevaTicketera implements UltimoIdentificadorDeTicketer
         Log.i("infor",ultimoIdentificador);
         this.ultimoIdentificadorDeTicketera=ultimoIdentificador;
         if(ultimoIdentificadorDeTicketera!=null&&ultimoNumeroDeTicketera!=null){
-            valoresRequeridosEncontrados();
+            valoresRequeridosEncontradosParaPublicar();
         }
     }
 
@@ -51,9 +46,12 @@ public class PublicadorDeNuevaTicketera implements UltimoIdentificadorDeTicketer
     public void onUltimoNumeroDeTicketeraEncondrado(String ultimoNumeroDeTicketera) {
         Log.i("infor","utlimo numero de ticketera encontrado: "+ultimoNumeroDeTicketera);
         this.ultimoNumeroDeTicketera=ultimoNumeroDeTicketera;
+        if(ultimoIdentificadorDeTicketera!=null&&this.ultimoNumeroDeTicketera!=null){
+            valoresRequeridosEncontradosParaPublicar();
+        }
     }
 
-    private void valoresRequeridosEncontrados(){
+    private void valoresRequeridosEncontradosParaPublicar(){
         Log.i("infor","valores requeridos encontrados");
         Log.i("infor","ultimo identificador: "+ultimoIdentificadorDeTicketera);
 
@@ -62,32 +60,16 @@ public class PublicadorDeNuevaTicketera implements UltimoIdentificadorDeTicketer
         int a=conversor.convertirABaseDiez(ultimoIdentificadorDeTicketera.substring(1,ultimoIdentificadorDeTicketera.length()));
         String nuevoCodigo="P"+conversor.convertirABaseSesentaYDos(a+1);
         //creo y envio mail con nuevo codigo publico
-        MyMail myMail=new MyMail.Builder(context).setAsunto("nuevo codigo").setMensaje("este es el nuevo codigo").setAttachmentUri(QrUriFromText(nuevoCodigo)).build();
-        myMail.send("marcosucu@gmail.com");
-        if(codigoPrivadoParaCompartir){
-            enviarMailConCodigoParaCompartir();
-        }
+        MyMail myMail=new MyMail.Builder(context).setAsunto("Nuevo codigo").setMensaje("este es el nuevo codigo").setAttachmentUri(QrUriFromText(nuevoCodigo)).build();
 
-        new Ticketera(databaseReference).setNumeroTicketera(ultimoNumeroDeTicketera).aumentarNumeroDeTicketera().setCreador("carlos").setId(nuevoCodigo).publicarEnFirebase();
-
-    }
-
-    private void enviarMailConCodigoParaCompartir(){
-        int a=ConversorBaseSesentaYDos.convertirABaseDiez(ultimoIdentificadorDeTicketera);
-        String nuevoCodigo=ConversorBaseSesentaYDos.convertirABaseSesentaYDos(a+1);
-        MyMail myMail= null;
-        try {
-            myMail = new MyMail.Builder(context).setAsunto("nuevo codigo privado").setMensaje("este es privado y para compartir").setAttachmentUri(QrParaCompartirUriFromText("P"+nuevoCodigo)).build();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        myMail.send("marcosucu@gmail.com");
-    }
+        //myMail.send("marcosucu@gmail.com"); lo actualizo
+        Log.i("infor","Se envia mail con nuevo codigo Qr a :"+FirebaseAuth.getInstance().getCurrentUser().getEmail());
+        myMail.send(FirebaseAuth.getInstance().getCurrentUser().getEmail());
 
 
-    private Uri QrParaCompartirUriFromText(String codigoPublico) throws Exception {
-        String paraCompartir=TraductorCodigoPublicoPrivado.traducirCodigoDePublicoAPrivado(codigoPublico);
-        return FileProvider.getUriForFile(context, "com.example.marcos.llamadordenumeroenfirebase.fileprovider", QrFileFromText(paraCompartir));
+        //new Ticketera(databaseReference).setNumeroTicketera(ultimoNumeroDeTicketera).aumentarNumeroDeTicketera().setCreador("carlos").setId(nuevoCodigo).publicarEnFirebase(); lo actualizo
+        new Ticketera(databaseReference).setNumeroTicketera(ultimoNumeroDeTicketera).aumentarNumeroDeTicketera().setCreador(FirebaseAuth.getInstance().getCurrentUser().getUid()).setId(nuevoCodigo).publicarEnFirebase();
+
     }
 
     private Uri QrUriFromText(String texto){

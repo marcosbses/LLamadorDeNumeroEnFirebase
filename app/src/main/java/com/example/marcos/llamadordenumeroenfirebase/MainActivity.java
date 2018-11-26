@@ -15,6 +15,11 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 
+import com.firebase.ui.auth.AuthUI;
+import com.firebase.ui.auth.ErrorCodes;
+import com.firebase.ui.auth.IdpResponse;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -36,6 +41,7 @@ public class MainActivity extends AppCompatActivity implements Ticketeras.Callba
 
     DatabaseReference databaseReference;
     private ImageView imageView;
+    private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +51,10 @@ public class MainActivity extends AppCompatActivity implements Ticketeras.Callba
         this.databaseReference=FirebaseDatabase.getInstance().getReference();
         this.imageView=(ImageView)findViewById(R.id.imageView);
 
+        mAuth = FirebaseAuth.getInstance();
+
     }
+
 
     public void aumentar(View v){
         databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -68,24 +77,10 @@ public class MainActivity extends AppCompatActivity implements Ticketeras.Callba
 
     public void crearImagenQr(View v){
 
-        File file;
-        file= QRCode.from("Gran Aplicacion").to(ImageType.PNG).file();
-        Bitmap bitmap=extractBitmap(file);
-        imageView.setImageBitmap(bitmap);
+        imageView.setImageURI(FondoQR.pegar(this,CodigoQr.QrUriFromText(this,"hola mundo")));
 
     }
 
-    private Bitmap extractBitmap(File file){
-        Bitmap bitmap = null;;
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-        try {
-            bitmap = BitmapFactory.decodeStream(new FileInputStream(file), null, options);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        return bitmap;
-    }
 
     public void enviarMail(View v){
         Log.i("infor","enviar mail");
@@ -94,7 +89,7 @@ public class MainActivity extends AppCompatActivity implements Ticketeras.Callba
     }
 
     public void nuevaTicketera(View v){
-        new Ticketera(databaseReference).publicarEnFirebase();
+        new Ticketera(databaseReference).setNumeroTicketera("t32").setId("djiwoe").setCreador(FirebaseAuth.getInstance().getCurrentUser().getUid()).publicarEnFirebase();
 
     }
 
@@ -133,7 +128,7 @@ public class MainActivity extends AppCompatActivity implements Ticketeras.Callba
 
     public void autenticar(View v){
         // Choose authentication providers
-        /*List<AuthUI.IdpConfig> providers = Arrays.asList(
+        List<AuthUI.IdpConfig> providers = Arrays.asList(
                 new AuthUI.IdpConfig.GoogleBuilder().build());
 
 // Create and launch sign-in intent
@@ -146,7 +141,7 @@ public class MainActivity extends AppCompatActivity implements Ticketeras.Callba
     }
 
     public void encontrarValoresRequeridosParaCrearNuevoQr(View v){
-        new PublicadorDeNuevaTicketera(this,databaseReference).publicar();*/
+        new PublicadorDeNuevaTicketera(this,databaseReference).publicar();
     }
 
 
@@ -186,14 +181,40 @@ public class MainActivity extends AppCompatActivity implements Ticketeras.Callba
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode,resultCode,data);
         Log.i("infor","on activity result");
-        Log.i("infor","nombre de creador: "+data.getExtras().getString("NOMBRE_CREADOR"));
+
+
         if (requestCode == 22) {
+            Log.i("infor","nombre de creador: "+data.getExtras().getString("NOMBRE_CREADOR"));
             if (resultCode == RESULT_OK) {
-                Log.i("infor","guardar  preferencias");
+
                 if(!data.getExtras().getString("NOMBRE_CREADOR").equals("Codigo no reconocido")){
-                    getSharedPreferences("preferencias_generales",Context.MODE_PRIVATE).edit().putString("creador_de_ticketeras",data.getExtras().getString("NOMBRE_CREADOR")).apply();
+                    Log.i("infor","guardar  preferencias");
+                    MisPreferenciasCompartidas.setIdDeAdministradorCreadorDeTicketeras(this,data.getExtras().getString("NOMBRE_CREADOR"));
+                    //getSharedPreferences("preferencias_generales",Context.MODE_PRIVATE).edit().putString("creador_de_ticketeras",data.getExtras().getString("NOMBRE_CREADOR")).apply();
                 }
+            }
+        }
+        if(requestCode==41){
+
+            if (resultCode == RESULT_OK) {
+                Log.i("infor","Successfully signed in");
+                // Successfully signed in
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                if(user==null){
+                    Log.i("infor","no tengo usuario");
+                }else{
+                    Log.i("infor","uid current user "+user.getUid());
+                }
+                // ...
+            } else {
+                Log.i("infor","Sign in failed. ");
+                // Sign in failed. If response is null the user canceled the
+                // sign-in flow using the back button. Otherwise check
+                // response.getError().getErrorCode() and handle the error.
+                // ...
+
             }
         }
     }
